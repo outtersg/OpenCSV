@@ -63,6 +63,7 @@ public class ResultSetHelperService implements Closeable {
         columnTypesI = new int[columnCount];
         for (int i = 0; i < metadata.getColumnCount(); i++) {
             int type = metadata.getColumnType(i + 1);
+            int scale = metadata.getScale(i + 1);
             String value;
             switch (type) {
                 case Types.JAVA_OBJECT:
@@ -76,8 +77,10 @@ public class ResultSetHelperService implements Closeable {
                 case Types.DOUBLE:
                 case Types.FLOAT:
                 case Types.REAL:
-                case Types.NUMERIC:
                     value = "double";
+                    break;
+                case Types.NUMERIC:
+                    value = (scale == 0) ? "long" : "double";
                     break;
                 case Types.BIGINT:
                     value = "long";
