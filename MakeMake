@@ -1,0 +1,27 @@
+#!/bin/sh
+
+mkdir -p build
+cd build
+{
+	printf "opencsv.jar: .once com/opencsv/bean/package.html "
+	find ../src -name "*.java" | grep -v package-info.java | grep -v opencsv/reader/LineReader.java | tee Makefile.src | sed -e 's#../src/##' -e 's#\.java#.class#' | tr '\012' ' '
+	echo
+	cat <<TERMINE
+	jar cf \$@ com
+
+.once:
+	# Start with a full build (to allow later 1-by-1 builds, without the hassle of interdependencies).
+	javac -d . @Makefile.src
+	touch \$@
+TERMINE
+	( cd ../src && find * -type d ) | while read d
+	do
+		cat <<TERMINE
+$d/%.class: ../src/$d/%.java
+	javac -d . -cp . \$<
+$d/%.html: ../src/$d/%.html
+	mkdir -p \`dirname \$@\`
+	cp \$< \$@
+TERMINE
+	done
+} > Makefile
