@@ -23,6 +23,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import com.opencsv.stream.out.OutputStreamWritable;
+import com.opencsv.stream.out.Writable;
+
 /**
  * A very simple CSV writer released under a commercial-friendly license.
  *
@@ -57,7 +60,7 @@ public class CSVWriter implements Closeable {
     protected PrintWriter logWriter;
     protected String CSVFileName;
     protected ResultSetHelperService resultService;
-    protected FileBuffer buffer;
+    protected Writable buffer;
     protected boolean asyncMode = false;
     protected HashMap<String, Boolean> excludes = new HashMap<>();
     protected HashMap<String, String> remaps = new HashMap();
@@ -73,13 +76,18 @@ public class CSVWriter implements Closeable {
     }
 
     public CSVWriter(String fileName, char separator, char quotechar, char escapechar, String lineEnd) throws IOException {
-        this(new FileWriter(fileName), separator, quotechar, escapechar, lineEnd);
+        this(fileName == null ? null : new FileWriter(fileName), separator, quotechar, escapechar, lineEnd);
         this.CSVFileName = fileName;
         String extensionName = "csv";
         if (quotechar == '\'' && escapechar == quotechar) extensionName = "sql";
+        if (fileName == null) {
+            buffer = new OutputStreamWritable(System.out);
+            logWriter = null;
+            //logWriter = new PrintWriter(System.err);
+        } else {
         buffer = new FileBuffer(INITIAL_BUFFER_SIZE, fileName, extensionName);
-        logWriter = new PrintWriter(buffer.file.getParentFile().getAbsolutePath() + File.separator + buffer.fileName + ".log");
-        //logWriter = new PrintWriter(System.err);
+        logWriter = new PrintWriter(((FileBuffer)buffer).file.getParentFile().getAbsolutePath() + File.separator + buffer.fileName + ".log");
+        }
     }
 
     public CSVWriter(String fileName) throws IOException {
@@ -183,6 +191,7 @@ public class CSVWriter implements Closeable {
     }
 
     protected void writeLog(int rows) {
+        if (logWriter == null) return;
         String msg = String.format("%s: %d rows extracted, total: %d rows, %.2f MB, %.3f secs on fetching.", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()), rows - incrRows, rows, (float) buffer.position / 1024 / 1024, resultService == null ? 0f : (float) resultService.cost / 1e9);
         logWriter.write(msg + "\n");
         logWriter.flush();
@@ -378,6 +387,7 @@ public class CSVWriter implements Closeable {
      */
     public void close() throws IOException {
         flush(true);
+        if (logWriter != null)
         logWriter.close();
         buffer.close();
         resultService = null;
@@ -391,6 +401,7 @@ public class CSVWriter implements Closeable {
     }
 
     public void createOracleCtlFileFromHeaders(String CSVFileName, String[] titles, String[] types, char encloser, char seperator, String rowSep) throws IOException {
+        if (buffer.fileName == null) return;
         File file = new File(CSVFileName);
         String FileName = file.getParentFile().getAbsolutePath() + File.separator + buffer.fileName + ".ctl";
         String ColName, str;

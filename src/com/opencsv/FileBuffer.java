@@ -13,19 +13,18 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class FileBuffer implements Closeable {
+import com.opencsv.stream.out.Writable;
+
+public class FileBuffer extends Writable {
     public static int BUFFER_RESERVED_SIZE = 1 << 20;
-    public String fileName;
     public String extName;
     public File file;
     public int bufferSize;
     public ByteBuffer buffer;
-    public long position = 0;
     protected RandomAccessFile out;
     protected DeflaterOutputStream zipStream;
     protected String zipType = null;
     protected FileChannel channel;
-    protected int currentBytes = 0;
     protected Charset charset;
     protected byte[] bList = new byte[BUFFER_RESERVED_SIZE];
     protected int bLen = 0;
