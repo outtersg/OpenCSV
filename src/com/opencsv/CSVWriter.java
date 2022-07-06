@@ -275,7 +275,14 @@ public class CSVWriter implements Closeable {
                     createOracleCtlFileFromHeaders(CSVFileName, resultService.columnNames, resultService.columnTypes, quotechar, separator, null);
             }
 
-            if (asyncMode) {
+            if (resultService.columnNames.length == 0) {
+                // Oracle JDBC has a bug (or spec?) that makes next() crash when the ResultSet has
+                // results, but a zero-column width (for example, an update). It complains about
+                // "missing defines" in its prepareAccessors().
+                // We make 0-width resultsets look like 0-result resultsets.
+                resultService.close();
+            }
+            else if (asyncMode) {
                 resultService.startAsyncFetch(new RowCallback() {
                     @Override
                     public void execute(Object[] row) throws Exception {
