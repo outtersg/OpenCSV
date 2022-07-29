@@ -291,7 +291,7 @@ public class CSVWriter implements Closeable {
                 });
             } else {
                 Object[] values;
-                while ((values = resultService.getColumnValues(true)) != null) writeNext(values);
+                while ((values = resultService.getColumnValues()) != null) writeNext(values);
             }
             return totalRows;
         }
