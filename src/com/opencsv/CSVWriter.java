@@ -273,6 +273,9 @@ public class CSVWriter implements Closeable {
                 writeColumnNames();
                 if (CSVFileName != null)
                     createOracleCtlFileFromHeaders(CSVFileName, resultService.columnNames, resultService.columnTypes, quotechar, separator, null);
+            } else {
+                // Make sure writeLog(0) gets called, as a before-output checkpoint.
+                writeNext(null);
             }
 
             if (resultService.columnNames.length == 0) {
@@ -311,10 +314,10 @@ public class CSVWriter implements Closeable {
      *                         to values which contain the separator, escape, quote or new line characters.
      */
     public void writeNext(Object[] nextLine, boolean applyQuotesToAll) throws IOException {
+        if (totalRows == 0) writeLog(0);
         if (nextLine == null) {
             return;
         }
-        if (totalRows == 0) writeLog(0);
         lineWidth = 0;
         int counter = 0;
         String nextElement;
