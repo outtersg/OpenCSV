@@ -53,6 +53,7 @@ public class CSVWriter implements Closeable {
     protected char separator;
     protected char quotechar;
     protected char escapechar;
+    protected String nullString = "";
     protected int lineWidth;
     protected int totalRows;
     protected int incrRows;
@@ -153,6 +154,10 @@ public class CSVWriter implements Closeable {
         this.quotechar = quotechar;
         this.escapechar = escapechar;
         this.lineEnd = lineEnd;
+    }
+
+    public void setNullString(String nullString) {
+        this.nullString = nullString;
     }
 
     public void setExclude(String columnName, boolean exclude) {
@@ -323,11 +328,15 @@ public class CSVWriter implements Closeable {
         String nextElement;
         Boolean stringContainsSpecialCharacters;
         for (int i = 0; i < nextLine.length; i++) {
-            if (titles != null && remaps.containsKey(titles[i])) nextElement = remaps.get(titles[i]);
-            else nextElement = nextLine[i] == null ? "" : nextLine[i].toString();
             if (resultService != null && excludes.containsKey(resultService.columnNames[i].toUpperCase()) && excludes.get(resultService.columnNames[i].toUpperCase()))
                 continue;
             if (++counter > 1) add(separator);
+            if (titles != null && remaps.containsKey(titles[i])) nextElement = remaps.get(titles[i]);
+            else if (nextLine[i] == null) {
+                add(nullString);
+                continue;
+            }
+            else nextElement = nextLine[i].toString();
             stringContainsSpecialCharacters = stringContainsSpecialCharacters(nextElement);
             if ((applyQuotesToAll || stringContainsSpecialCharacters) && quotechar != NO_QUOTE_CHARACTER) {
                 add(quotechar);
