@@ -59,7 +59,11 @@ public class CSVWriter implements Closeable {
     protected int incrRows;
     protected String lineEnd;
     protected PrintWriter logWriter;
+    protected int splitAt = 0;
+    protected int splitFileCount = 0;
+    protected PrintWriter splitLogWriter;
     protected String CSVFileName;
+    protected String extensionName = "csv";
     protected ResultSetHelperService resultService;
     protected Writable buffer;
     protected boolean asyncMode = false;
@@ -79,7 +83,6 @@ public class CSVWriter implements Closeable {
     public CSVWriter(String fileName, char separator, char quotechar, char escapechar, String lineEnd) throws IOException {
         this(fileName == null ? null : new FileWriter(fileName), separator, quotechar, escapechar, lineEnd);
         this.CSVFileName = fileName;
-        String extensionName = "csv";
         if (quotechar == '\'' && escapechar == quotechar) extensionName = "sql";
         if (fileName == null) {
             buffer = new OutputStreamWritable(System.out);
@@ -180,6 +183,12 @@ public class CSVWriter implements Closeable {
 
     public void setBufferSize(int bytes) {
         INITIAL_BUFFER_SIZE = bytes;
+    }
+
+    public void setSplit(int lines, String splitLogSuffix) throws IOException {
+        splitAt = lines;
+        splitFileCount = 1; // We are already sp(l)itting to a file.
+        splitLogWriter = new PrintWriter(coFilePath(((FileBuffer)buffer).file, splitLogSuffix));
     }
 
     protected CSVWriter add(char str) throws IOException {
@@ -327,6 +336,11 @@ public class CSVWriter implements Closeable {
         if (nextLine == null) {
             return;
         }
+
+        if (splitAt > 0 && totalRows > 0 && totalRows % splitAt == 0) {
+            split();
+        }
+
         lineWidth = 0;
         int counter = 0;
         String nextElement;
@@ -412,10 +426,31 @@ public class CSVWriter implements Closeable {
         flush(true);
         if (logWriter != null)
         logWriter.close();
+        if (splitLogWriter != null) {
+            split(false);
+            splitLogWriter.write("-\n");
+            splitLogWriter.close();
+        }
         buffer.close();
         resultService = null;
         System.gc();
         System.runFinalization();
+    }
+
+    protected void split(boolean andContinue) throws IOException {
+        splitLogWriter.write(((FileBuffer)buffer).file.getAbsolutePath() + "\n");
+        splitLogWriter.flush();
+        if (andContinue) {
+            flush(true);
+            buffer.close();
+            buffer = new FileBuffer(INITIAL_BUFFER_SIZE, CSVFileName + (splitFileCount > 0 ? "." + splitFileCount : ""), extensionName);
+            ++splitFileCount;
+            // @todo Have an option to duplicate header line to each FileBuffer.
+        }
+    }
+
+    protected void split() throws IOException {
+        split(true);
     }
 
     private String toHexIfInvisible(char c) {
