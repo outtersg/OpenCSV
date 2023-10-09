@@ -87,7 +87,7 @@ public class CSVWriter implements Closeable {
             //logWriter = new PrintWriter(System.err);
         } else {
         buffer = new FileBuffer(INITIAL_BUFFER_SIZE, fileName, extensionName);
-        logWriter = new PrintWriter(((FileBuffer)buffer).file.getParentFile().getAbsolutePath() + File.separator + buffer.fileName + ".log");
+            logWriter = new PrintWriter(coFilePath(((FileBuffer)buffer).file, ".log"));
         }
     }
 
@@ -154,6 +154,10 @@ public class CSVWriter implements Closeable {
         this.quotechar = quotechar;
         this.escapechar = escapechar;
         this.lineEnd = lineEnd;
+    }
+
+    protected String coFilePath(File file, String suffix) {
+        return file.getParentFile().getAbsolutePath() + File.separator + buffer.fileName + suffix;
     }
 
     public void setNullString(String nullString) {
@@ -422,7 +426,7 @@ public class CSVWriter implements Closeable {
     public void createOracleCtlFileFromHeaders(String CSVFileName, String[] titles, String[] types, char encloser, char seperator, String rowSep) throws IOException {
         if (buffer.fileName == null) return;
         File file = new File(CSVFileName);
-        String FileName = file.getParentFile().getAbsolutePath() + File.separator + buffer.fileName + ".ctl";
+        String FileName = coFilePath(file, ".ctl");
         String ColName, str;
         FileWriter writer = new FileWriter(FileName);
         StringBuilder b = new StringBuilder(CSVParser.READ_BUFFER_SIZE);
