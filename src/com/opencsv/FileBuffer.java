@@ -54,6 +54,7 @@ public class FileBuffer extends Writable {
 
             out = new RandomAccessFile(file, "rw");
             channel = out.getChannel();
+            channel.truncate(0);
             this.bufferSize = bufferSize;
 
             if (isZip) {
