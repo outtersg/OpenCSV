@@ -485,6 +485,16 @@ public class CSVWriter implements Closeable {
                 else if (types[i].equalsIgnoreCase("timestamp")) b.append("TIMESTAMP \"YYYY-MM-DD HH24:MI:SSXFF\" ");
                 else if (types[i].equalsIgnoreCase("timestamptz"))
                     b.append("TIMESTAMP WITH TIME ZONE \"YYYY-MM-DD HH24:MI:SSXFF TZH\" ");
+                else
+                switch (types[i].toLowerCase()) {
+                    case "int":
+                    case "long":
+                        b.append("INTEGER EXTERNAL ");
+                        break;
+                    case "double":
+                        b.append("FLOAT EXTERNAL ");
+                        break;
+                }
                 b.append(String.format("NULLIF %s=BLANKS", ColName));
             }
         }
