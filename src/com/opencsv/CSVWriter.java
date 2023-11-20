@@ -192,7 +192,8 @@ public class CSVWriter implements Closeable {
     }
 
     protected CSVWriter add(char str) throws IOException {
-        buffer.write(str);
+        // Use a String, because it respects the env's encoding, whereas char gets output to a default encoding.
+        buffer.write(Character.toString(str));
         ++lineWidth;
         return this;
     }
