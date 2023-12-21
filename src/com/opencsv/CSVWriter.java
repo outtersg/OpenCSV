@@ -58,6 +58,7 @@ public class CSVWriter implements Closeable {
     protected int totalRows;
     protected int incrRows;
     protected String lineEnd;
+    protected String resultEnd;
     protected PrintWriter logWriter;
     protected int splitAt = 0;
     protected int splitFileCount = 0;
@@ -80,10 +81,11 @@ public class CSVWriter implements Closeable {
         this(writer, CSVParser.DEFAULT_SEPARATOR);
     }
 
-    public CSVWriter(String fileName, char separator, char quotechar, char escapechar, String lineEnd) throws IOException {
+    public CSVWriter(String fileName, char separator, char quotechar, char escapechar, String lineEnd, String resultEnd) throws IOException {
         this(fileName == null ? null : new FileWriter(fileName), separator, quotechar, escapechar, lineEnd);
         this.CSVFileName = fileName;
         if (quotechar == '\'' && escapechar == quotechar) extensionName = "sql";
+        this.resultEnd = resultEnd;
         if (fileName == null) {
             buffer = new OutputStreamWritable(System.out);
             logWriter = null;
@@ -92,6 +94,10 @@ public class CSVWriter implements Closeable {
         buffer = new FileBuffer(INITIAL_BUFFER_SIZE, fileName, extensionName);
             logWriter = new PrintWriter(coFilePath(((FileBuffer)buffer).file, ".log"));
         }
+    }
+
+    public CSVWriter(String fileName, char separator, char quotechar, char escapechar, String lineEnd) throws IOException {
+        this(fileName, separator, quotechar, escapechar, lineEnd, null);
     }
 
     public CSVWriter(String fileName) throws IOException {
@@ -335,6 +341,9 @@ public class CSVWriter implements Closeable {
     public void writeNext(Object[] nextLine, boolean applyQuotesToAll) throws IOException {
         if (totalRows == 0) writeLog(0);
         if (nextLine == null) {
+            if (resultEnd != null) {
+                add(resultEnd);
+            }
             return;
         }
 
