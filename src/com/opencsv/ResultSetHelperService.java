@@ -80,7 +80,8 @@ public class ResultSetHelperService implements Closeable {
                     value = "double";
                     break;
                 case Types.NUMERIC:
-                    value = (scale == 0) ? "long" : "double";
+                    // https://stackoverflow.com/questions/46068572/oracle-db-returning-negative-scale-and-0-precision-using-jdbc
+                    value = (scale == 0 || scale == -127) ? "long" : "double";
                     break;
                 case Types.BIGINT:
                     value = "long";
