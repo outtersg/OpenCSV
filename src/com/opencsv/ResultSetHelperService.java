@@ -81,7 +81,20 @@ public class ResultSetHelperService implements Closeable {
                     break;
                 case Types.NUMERIC:
                     // https://stackoverflow.com/questions/46068572/oracle-db-returning-negative-scale-and-0-precision-using-jdbc
-                    value = (scale == 0 || scale == -127) ? "long" : "double";
+                    // https://stackoverflow.com/questions/1410267/oracle-resultsetmetadata-getprecision-getscale
+                    // Oracle Thin is a mess, giving no clue as wether a column can be considered an int or a float,
+                    // except when explicitely cast to float:
+                    //   select
+                    //     1 i, round(1.2) arr, cast(1 as integer) ii, sum(cast(2 as integer)) s, count(1) c,
+                    //     1.2 f, round(1.2345, 2) arrf, sum(1.234) sf, sum(cast(1.234 as float)) sff, cast(1.2 as float) ff
+                    //   from dual;
+                    // will return (scale / precision):
+                    //     -127/0 -127/0 0/38 0/0 0/0
+                    //     -127/0 -127/0 0/0 0/0 -127/126
+                    // So: only a cast to int gives a non-ambiguous int (0/>0), only a cast to float gives a non-ambiguous float (-127/>0).
+                    // All other combinations give -127/0 or 0/0, be they intended for a float or an int.
+                    // We will tag as int by default, and require explicit casts to float.
+                    value = (scale == 0 || (scale == -127 && metadata.getPrecision(i + 1) == 0)) ? "long" : "double";
                     break;
                 case Types.BIGINT:
                     value = "long";
